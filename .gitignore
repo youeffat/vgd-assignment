@@ -1,0 +1,45 @@
+# --- Unity generated files ---
+Library/
+Temp/
+Logs/
+Obj/
+MemoryCaptures/
+UserSettings/
+
+# --- Asset packages ---
+Packages/manifest.json
+Packages/packages-lock.json
+
+# --- Visual Studio / MonoDevelop / Rider generated files ---
+ExportedObj/
+.vs/
+.idea/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# --- Unity Generated File Local Settings ---
+/*.project
+/*.classpath
+/*.prefs
+
+# --- OS generated files ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini

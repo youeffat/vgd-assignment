@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d64b934266a465473821ec972fbf18f0, type: 3}
+  m_Name: radical_person
+  m_EditorClassIdentifier: Assembly-CSharp::SymbolTemplate
+  symbolIdName: radical_person
+  templatePoints:
+  - {x: 592, y: 484}
+  - {x: 591, y: 479}
+  - {x: 588, y: 473}
+  - {x: 582, y: 463}
+  - {x: 571, y: 443}
+  - {x: 561, y: 427}
+  - {x: 556, y: 418}
+  - {x: 551, y: 409}
+  - {x: 545, y: 399}
+  - {x: 538, y: 389}
+  - {x: 532, y: 380}
+  - {x: 525, y: 370}
+  - {x: 518, y: 362}
+  - {x: 513, y: 354}
+  - {x: 507, y: 347}
+  - {x: 502, y: 339}
+  - {x: 498, y: 333}
+  - {x: 493, y: 327}
+  - {x: 490, y: 322}
+  - {x: 485, y: 317}
+  - {x: 480, y: 312}
+  - {x: 475, y: 307}
+  - {x: 470, y: 302}
+  - {x: 465, y: 298}
+  - {x: 461, y: 293}
+  - {x: 456, y: 289}
+  - {x: 451, y: 285}
+  - {x: 446, y: 283}
+  - {x: 440, y: 279}
+  - {x: 435, y: 277}
+  - {x: 430, y: 274}
+  - {x: 422, y: 270}
+  - {x: 415, y: 267}
+  - {x: 410, y: 264}
+  - {x: 405, y: 262}
+  - {x: 547, y: 397}
+  - {x: 547, y: 390}
+  - {x: 552, y: 384}
+  - {x: 556, y: 380}
+  - {x: 562, y: 374}
+  - {x: 566, y: 369}
+  - {x: 571, y: 363}
+  - {x: 575, y: 357}
+  - {x: 581, y: 349}
+  - {x: 585, y: 342}
+  - {x: 600, y: 325}
+  - {x: 616, y: 308}
+  - {x: 622, y: 303}
+  - {x: 630, y: 298}
+  - {x: 637, y: 292}
+  - {x: 643, y: 287}
+  - {x: 650, y: 282}
+  - {x: 655, y: 275}
+  - {x: 660, y: 270}
+  - {x: 665, y: 265}
+  - {x: 673, y: 258}
+  - {x: 678, y: 253}
+  - {x: 683, y: 250}
