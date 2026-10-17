@@ -7,6 +7,7 @@ using PDollarRecognizer;
 [RequireComponent(typeof(SpellDatabase))]
 [RequireComponent(typeof(AntiGravitySpell))]
 [RequireComponent(typeof(SwapSpell))]
+[RequireComponent(typeof(CloneSpell))]
 public class FPSGestureController : MonoBehaviour
 {
     [Header("Movement Settings")]
@@ -48,6 +49,7 @@ public class FPSGestureController : MonoBehaviour
     private SpellDatabase spellDatabase;
     private AntiGravitySpell antiGravitySpell;
     private SwapSpell swapSpell;
+    private CloneSpell cloneSpell;
     private Recognizer _recognizer;
     private List<Vector2> _allStrokePoints = new List<Vector2>();
     private List<Vector2> _currentStrokePoints = new List<Vector2>();
@@ -64,6 +66,7 @@ public class FPSGestureController : MonoBehaviour
         spellDatabase = GetComponent<SpellDatabase>();
         antiGravitySpell = GetComponent<AntiGravitySpell>();
         swapSpell = GetComponent<SwapSpell>();
+        cloneSpell = GetComponent<CloneSpell>();
         
         if (playerCamera == null)
         {
@@ -373,6 +376,15 @@ public class FPSGestureController : MonoBehaviour
                 Rigidbody rbHit = hit.collider.GetComponent<Rigidbody>();
                 if (rbHit != null)
                 {
+                    if (spellType.Value == SpellType.Clone)
+                    {
+                        if (hit.collider.CompareTag("Clone") || hit.collider.GetComponent<ClonedObjectTracker>() != null)
+                        {
+                            Debug.Log("Cannot cast Clone spell on this object; it has already been cloned or is a clone!");
+                            return;
+                        }
+                    }
+
                     switch (spellType.Value)
                     {
                         case SpellType.AntiGravity:
@@ -383,6 +395,10 @@ public class FPSGestureController : MonoBehaviour
                         case SpellType.SwapPositions:
                             swapSpell.ExecuteSwap(transform, controller, rbHit);
                             Debug.Log($"Swapped positions with {hit.collider.name}!");
+                            break;
+                        case SpellType.Clone:
+                            cloneSpell.ExecuteClone(hit.collider);
+                            Debug.Log($"Cast Clone on {hit.collider.name}!");
                             break;
                     }
                 }
