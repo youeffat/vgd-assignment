@@ -8,6 +8,7 @@ using PDollarRecognizer;
 [RequireComponent(typeof(AntiGravitySpell))]
 [RequireComponent(typeof(SwapSpell))]
 [RequireComponent(typeof(CloneSpell))]
+[RequireComponent(typeof(NorthSouthSpellManager))]
 public class FPSGestureController : MonoBehaviour
 {
     [Header("Movement Settings")]
@@ -35,6 +36,11 @@ public class FPSGestureController : MonoBehaviour
     public Material lineMaterial;
     public float lineWidth = 0.15f;
 
+    [Header("Recognition Settings")]
+    [Tooltip("Minimum confidence score required to successfully recognize and cast a drawn symbol (0 to 1).")]
+    [Range(0f, 1f)]
+    public float recognitionThreshold = 0.4f;
+
     [Header("Symbol Recording Mode")]
     [Tooltip("Check this to record/update a symbol asset instead of casting spells.")]
     public bool isRecordingAssetMode = false;
@@ -50,6 +56,7 @@ public class FPSGestureController : MonoBehaviour
     private AntiGravitySpell antiGravitySpell;
     private SwapSpell swapSpell;
     private CloneSpell cloneSpell;
+    private NorthSouthSpellManager northSouthManager;
     private Recognizer _recognizer;
     private List<Vector2> _allStrokePoints = new List<Vector2>();
     private List<Vector2> _currentStrokePoints = new List<Vector2>();
@@ -67,6 +74,7 @@ public class FPSGestureController : MonoBehaviour
         antiGravitySpell = GetComponent<AntiGravitySpell>();
         swapSpell = GetComponent<SwapSpell>();
         cloneSpell = GetComponent<CloneSpell>();
+        northSouthManager = GetComponent<NorthSouthSpellManager>();
         
         if (playerCamera == null)
         {
@@ -84,9 +92,25 @@ public class FPSGestureController : MonoBehaviour
         _recognizer = new Recognizer();
         foreach (var templateAsset in symbolLibrary)
         {
-            if (templateAsset != null && templateAsset.templatePoints.Count > 0)
+            if (templateAsset != null)
             {
-                _recognizer.SavePattern(templateAsset.symbolIdName, templateAsset.templatePoints);
+                int rawCount = templateAsset.templatePoints != null ? templateAsset.templatePoints.Count : 0;
+                Debug.Log($"[RecognizerLoad] Checking template asset '{templateAsset.symbolIdName}' | Raw Point Count: {rawCount}");
+
+                if (rawCount > 0)
+                {
+                    // Force-clean the template points to 32 right here before loading them into the recognizer
+                    List<Vector2> cleanTemplatePoints = (rawCount == 32) 
+                        ? templateAsset.templatePoints 
+                        : ResamplePoints(templateAsset.templatePoints, 32);
+
+                    _recognizer.SavePattern(templateAsset.symbolIdName, cleanTemplatePoints);
+                    Debug.Log($"[RecognizerLoad] Loaded template '{templateAsset.symbolIdName}' with {cleanTemplatePoints.Count} points into recognizer library.");
+                }
+                else
+                {
+                    Debug.LogWarning($"[RecognizerLoad] Skipped template '{templateAsset.symbolIdName}' because it has 0 points!");
+                }
             }
         }
     }
@@ -147,23 +171,109 @@ public class FPSGestureController : MonoBehaviour
             return;
         }
 
-        // Directly assign Vector2 array to templatePoints
-        symbolTemplateToRecord.templatePoints = _allStrokePoints;
+        if (symbolTemplateToRecord == null)
+        {
+            Debug.LogWarning("No Symbol Template asset assigned to record into!");
+            return;
+        }
 
-    #if UNITY_EDITOR
+        // Force resampling to EXACTLY 32 points
+        List<Vector2> resampledPoints = ResamplePoints(_allStrokePoints, 32);
+        Debug.Log($"Resampled raw points from {_allStrokePoints.Count} down to {resampledPoints.Count} points.");
+
+        if (symbolTemplateToRecord.templatePoints == null)
+        {
+            symbolTemplateToRecord.templatePoints = new List<Vector2>();
+        }
+
+        symbolTemplateToRecord.templatePoints.Clear();
+        symbolTemplateToRecord.templatePoints.AddRange(resampledPoints);
+
+#if UNITY_EDITOR
         UnityEditor.EditorUtility.SetDirty(symbolTemplateToRecord);
         UnityEditor.AssetDatabase.SaveAssets();
-    #endif
+#endif
 
         ReloadRecognizerLibrary();
-        Debug.Log($"Successfully updated Symbol Template asset: **{symbolTemplateToRecord.symbolIdName}**!");
+        Debug.Log($"Successfully recorded and saved **{symbolTemplateToRecord.symbolIdName}** with EXACTLY {symbolTemplateToRecord.templatePoints.Count} points!");
+    }
+
+    // Cumulative-distance interpolation resampler that guarantees EXACT count 'n'
+    private List<Vector2> ResamplePoints(List<Vector2> points, int n)
+    {
+        if (points == null || points.Count == 0) return new List<Vector2>();
+
+        List<float> distances = new List<float>();
+        distances.Add(0f);
+        float totalLength = 0f;
+
+        for (int i = 1; i < points.Count; i++)
+        {
+            totalLength += Vector2.Distance(points[i - 1], points[i]);
+            distances.Add(totalLength);
+        }
+
+        if (totalLength <= 0f)
+        {
+            List<Vector2> fallback = new List<Vector2>();
+            for (int i = 0; i < n; i++) fallback.Add(points[0]);
+            return fallback;
+        }
+
+        float interval = totalLength / (n - 1);
+        List<Vector2> resampled = new List<Vector2>();
+        int pointIndex = 1;
+
+        for (int i = 0; i < n; i++)
+        {
+            float targetDist = i * interval;
+
+            while (pointIndex < distances.Count && distances[pointIndex] < targetDist)
+            {
+                pointIndex++;
+            }
+
+            if (pointIndex >= distances.Count)
+            {
+                resampled.Add(points[points.Count - 1]);
+                continue;
+            }
+
+            float d0 = distances[pointIndex - 1];
+            float d1 = distances[pointIndex];
+            float segmentLength = d1 - d0;
+
+            float t = (segmentLength > 0f) ? (targetDist - d0) / segmentLength : 0f;
+            Vector2 interpolated = Vector2.Lerp(points[pointIndex - 1], points[pointIndex], t);
+            resampled.Add(interpolated);
+        }
+
+        while (resampled.Count < n)
+        {
+            resampled.Add(points[points.Count - 1]);
+        }
+        if (resampled.Count > n)
+        {
+            resampled.RemoveRange(n, resampled.Count - n);
+        }
+
+        return resampled;
+    }
+
+    private float TotalLength(List<Vector2> points)
+    {
+        float dist = 0f;
+        for (int i = 1; i < points.Count; i++)
+        {
+            dist += Vector2.Distance(points[i - 1], points[i]);
+        }
+        return dist;
     }
 
     void TriggerCastAnimation()
     {
         if (playerHandsAnimator != null)
         {
-            // Set IsDrawing false so it exits drawing state immediately, and fire Cast trigger
             playerHandsAnimator.SetBool("IsDrawing", false);
             playerHandsAnimator.SetTrigger("Cast");
         }
@@ -171,31 +281,25 @@ public class FPSGestureController : MonoBehaviour
 
     void HandleMovement()
     {
-        // Ground check & gravity reset
         if (controller.isGrounded && velocity.y < 0)
         {
             velocity.y = -2f;
         }
 
-        // Sprint check (Left Shift)
         float currentSpeed = Input.GetKey(KeyCode.LeftShift) ? sprintSpeed : moveSpeed;
 
         float x = Input.GetAxis("Horizontal");
         float z = Input.GetAxis("Vertical");
 
-        // Calculate horizontal motion vector
         Vector3 horizontalMove = (transform.right * x + transform.forward * z) * currentSpeed;
 
-        // Jump check (Space)
         if (Input.GetKeyDown(KeyCode.Space) && controller.isGrounded)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
 
-        // Apply gravity velocity
         velocity.y += gravity * Time.deltaTime;
 
-        // Combine both into a single Move call so isGrounded registers accurately
         Vector3 finalMove = horizontalMove + new Vector3(0, velocity.y, 0);
         controller.Move(finalMove * Time.deltaTime);
     }
@@ -241,7 +345,6 @@ public class FPSGestureController : MonoBehaviour
             if (xRotation > 180f) xRotation -= 360f;
         }
 
-        // Cooldown timer set to 0.5s
         float timer = 0f;
         while (timer < 0.5f)
         {
@@ -329,23 +432,35 @@ public class FPSGestureController : MonoBehaviour
 
     void ProcessRecognition()
     {
+        Debug.Log($"[ProcessRecognition] Raw stroke points captured: {_allStrokePoints.Count}");
+
         if (_allStrokePoints.Count > 10)
         {
-            Result result = _recognizer.Recognize(_allStrokePoints);
-            Debug.Log($"Recognized Symbol: **{result.Match}** with Score: **{result.Score:F2}**");
+            List<Vector2> resampledInput = ResamplePoints(_allStrokePoints, 32);
+            Debug.Log($"[ProcessRecognition] Resampled input points: {resampledInput.Count} (Target: 32)");
 
-            if (result.Score > 0.4f)
+            try
             {
-                TriggerGameAction(result.Match);
+                Result result = _recognizer.Recognize(resampledInput);
+                Debug.Log($"[ProcessRecognition] Recognition Successful! Match: **{result.Match}** | Score: **{result.Score:F2}**");
+
+                if (result.Score > recognitionThreshold)
+                {
+                    TriggerGameAction(result.Match);
+                }
+                else
+                {
+                    Debug.Log("[ProcessRecognition] Symbol not recognized clearly (score too low).");
+                }
             }
-            else
+            catch (System.Exception ex)
             {
-                Debug.Log("Symbol not recognized clearly.");
+                Debug.LogError($"[CRASH CAUGHT] Recognizer threw an exception!\nMessage: {ex.Message}\nStack Trace:\n{ex.StackTrace}");
             }
         }
         else
         {
-            Debug.Log("Drawing too short or empty.");
+            Debug.Log("[ProcessRecognition] Drawing too short or empty.");
         }
     }
 
@@ -399,6 +514,15 @@ public class FPSGestureController : MonoBehaviour
                         case SpellType.Clone:
                             cloneSpell.ExecuteClone(hit.collider);
                             Debug.Log($"Cast Clone on {hit.collider.name}!");
+                            break;
+                        case SpellType.North:
+                            northSouthManager.ApplyNorth(hit.collider);
+                            Debug.Log($"Cast North on {hit.collider.name}!");
+                            break;
+
+                        case SpellType.South:
+                            northSouthManager.ApplySouth(hit.collider);
+                            Debug.Log($"Cast South on {hit.collider.name}!");
                             break;
                     }
                 }

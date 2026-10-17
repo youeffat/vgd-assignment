@@ -4748,6 +4748,7 @@ GameObject:
   - component: {fileID: 1261063870}
   - component: {fileID: 1261063871}
   - component: {fileID: 1261063872}
+  - component: {fileID: 1261063873}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -4875,10 +4876,13 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 0479e6f1012f5873286fb3bfe4eb6969, type: 2}
   - {fileID: 11400000, guid: da8e4a68ca747625784ad05d5ff65ba6, type: 2}
   - {fileID: 11400000, guid: 1d5d70b7209f2a4f79122ade10bced10, type: 2}
+  - {fileID: 11400000, guid: 9a4178db027d488149471a4add0cd34d, type: 2}
+  - {fileID: 11400000, guid: 29c55be0ab72262abba9e528d7c6e566, type: 2}
   lineMaterial: {fileID: 2100000, guid: 200fb5587ac4dcf018168b92d65b02c6, type: 2}
   lineWidth: 0.15
+  recognitionThreshold: 0.7
   isRecordingAssetMode: 0
-  symbolTemplateToRecord: {fileID: 0}
+  symbolTemplateToRecord: {fileID: 11400000, guid: 29c55be0ab72262abba9e528d7c6e566, type: 2}
   maxSpellRange: 50
   targetLayerMask:
     serializedVersion: 2
@@ -4927,6 +4931,10 @@ MonoBehaviour:
     spellType: 1
   - symbolName: radical_clone
     spellType: 2
+  - symbolName: radical_north
+    spellType: 3
+  - symbolName: radical_south
+    spellType: 4
 --- !u!114 &1261063870
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4970,6 +4978,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CloneSpell
   spawnHeightOffset: 2
+--- !u!114 &1261063873
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1261063862}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbd5295727e11bc5ab1cff0b3eb7cb36, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NorthSouthSpellManager
+  attractionStrength: 25
 --- !u!4 &1368826382 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: c3b849f5b22685d8f9be834cb07d94f0, type: 3}

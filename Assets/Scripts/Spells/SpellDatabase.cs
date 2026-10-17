@@ -5,7 +5,9 @@ public enum SpellType
 {
     AntiGravity,
     SwapPositions,
-    Clone
+    Clone,
+    North,
+    South
 }
 
 [System.Serializable]
